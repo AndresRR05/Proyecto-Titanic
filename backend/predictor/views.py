@@ -6,13 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
 
-# 1. Cargar el modelo v2 (sigue siendo el mismo)
+# 1. Cargar el modelo v2
 MODEL_PATH = os.path.join(settings.BASE_DIR, 'predictor/titanic_model.joblib')
 model = joblib.load(MODEL_PATH)
 
-# 2. Medias del dataset (los valores que imprimió el script anterior)
-#    (Pega aquí los valores exactos que te dio train_model.py)
-DEFAULT_AGE = 29.69911764705882  # (Ejemplo, usa el tuyo)
+# 2. Medias del dataset
+DEFAULT_AGE = 29.69911764705882
 
 # 3. ¡VOLVEMOS A AGREGAR EL MAPA DE TARIFAS!
 FARE_MAP = {
@@ -48,12 +47,10 @@ class PredictView(APIView):
             
             # Sexo
             sex_encoded = 1 if sex_str.lower() == 'female' else 0
-            
             # Edad (si está vacío, usamos la media)
             age = float(age_str) if age_str else DEFAULT_AGE
-            
-            # ¡Tarifa (ASIGNADA AUTOMÁTICAMENTE)!
-            fare = FARE_MAP.get(pclass, 13.68) # Default a 3ra clase
+            # Tarifa asignada automaticamente según la clase
+            fare = FARE_MAP.get(pclass, 13.68) # Por defecto usamos la media de la Clase 3
 
             # Puerto (Convertir 'S', 'C', 'Q' en 3 columnas)
             embarked_c = 1 if embarked == 'C' else 0
@@ -73,7 +70,7 @@ class PredictView(APIView):
                 embarked_s
             ]])
 
-            # D. Hacer la predicción
+            # D. Realizamos la predicción
             probability = model.predict_proba(features)[0][1]
             
             # E. Formatear y devolver la respuesta

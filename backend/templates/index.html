@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción Supervivencia Titanic</title>
+    <style>
+        body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:grid;place-items:center;min-height:90vh;background-color:#F8F9FA;margin:0}#container{background:#FFF;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:2.5rem;width:380px;box-sizing:border-box}h1{text-align:center;color:#212529;margin-top:0;margin-bottom:2rem}.form-group{margin-bottom:1.8rem}label{display:block;margin-bottom:.6rem;font-weight:600;color:#495057;font-size:.9rem}input,select{width:100%;padding:.9rem;border:1px solid #CED4DA;border-radius:6px;box-sizing:border-box;font-size:1rem;transition:border-color .2s ease-in-out,box-shadow .2s ease-in-out}input:focus,select:focus{outline:0;border-color:#1ABC9C;box-shadow:0 0 0 3px rgba(26,188,156,.2)}button{width:100%;padding:.9rem;background-color:#1ABC9C;color:#fff;border:none;border-radius:6px;font-size:1.1rem;font-weight:600;cursor:pointer;transition:background-color .2s ease-in-out,transform .1s ease;box-shadow:0 2px 4px rgba(0,0,0,.1)}button:hover{background-color:#16A085}button:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(0,0,0,.15)}#result-container{margin-top:2.5rem;text-align:center}#result-text{font-size:1rem;color:#6C757D;display:none;margin-bottom:.5rem}#result{font-size:2.8rem;font-weight:700;color:#1ABC9C;margin-top:.5rem}input#fare[readonly]{background-color:#E9ECEF;cursor:default}input#fare[readonly]:focus{border-color:#CED4DA;box-shadow:none}
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>TITANIC</h1>
+        <form id="prediction-form">
+            {% csrf_token %} {/* */}
+
+            <div class="form-group">
+                <label for="pclass">Clase del Boleto:</label>
+                <select id="pclass" name="pclass" required>
+                    <option value="1">1ra Clase</option>
+                    <option value="2">2da Clase</option>
+                    <option value="3" selected>3ra Clase</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="sex">Sexo:</label>
+                <select id="sex" name="sex" required>
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="age">Edad:</label>
+                <input type="number" id="age" name="age" min="1" max="100" placeholder="Ej: 25 (Opcional)">
+            </div>
+            <div class="form-group">
+                <label for="fare">Tarifa (Precio del Boleto):</label>
+                <input type="number" id="fare" name="fare" min="0" max="600" step="0.01" readonly>
+            </div>
+            <div class="form-group">
+                <label for="embarked">Puerto de Embarque:</label>
+                <select id="embarked" name="embarked" required>
+                    <option value="S" selected>Southampton (S)</option>
+                    <option value="C">Cherbourg (C)</option>
+                    <option value="Q">Queenstown (Q)</option>
+                </select>
+            </div>
+            <button type="submit">Predecir Supervivencia</button>
+        </form>
+        <div id="result-container">
+            <p id="result-text">Probabilidad de Supervivencia:</p>
+            <h2 id="result">---</h2>
+        </div>
+    </div>
+    <script>
+        const fareMap={1:84.15,2:20.66,3:13.68};
+        const pclassSelect=document.getElementById("pclass"),fareInput=document.getElementById("fare");
+        function updateFare(){const e=pclassSelect.value,t=fareMap[e]||fareMap[3];fareInput.value=t.toFixed(2)}
+        pclassSelect.addEventListener("change",updateFare);
+        document.addEventListener("DOMContentLoaded",updateFare);
+        document.getElementById("prediction-form").addEventListener("submit",async function(e){
+            e.preventDefault();
+            const t=pclassSelect.value,a=document.getElementById("sex").value,n=document.getElementById("age").value||"",c=document.getElementById("embarked").value,o=document.getElementById("result"),d=document.getElementById("result-text");
+            o.textContent="Calculando...",d.style.display="block";
+            try{
+                const e=await fetch("/predict/",{method:"POST",headers:{"Content-Type":"application/json",
+                // Busca el token que genera Django con {% csrf_token %}
+                "X-CSRFToken":document.querySelector("[name=csrfmiddlewaretoken]").value},
+                body:JSON.stringify({pclass:t,sex:a,age:n,embarked:c})});
+                if(!e.ok){let t=`Error HTTP: ${e.status}`;try{const a=await e.json();t=`Error de API: ${a.error||e.statusText}`}catch(a){}throw new Error(t)}
+                const r=await e.json();
+                void 0!==r.survival_percentage?o.textContent=`${r.survival_percentage} %`:r.error?o.textContent=`Error: ${r.error}`:o.textContent="Respuesta inesperada"
+            }catch(e){console.error("Error al conectar con la API:",e),o.textContent=e.message.includes("API")?e.message:"Error de conexión."}
+        });
+    </script>
+</body>
+</html>
