@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-bw@9xbt3&&0wut+xg622xk2)j8o70xjbuwt1mf3+$=^!e-f207
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = ['proyecto-titanic-ewvm.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
